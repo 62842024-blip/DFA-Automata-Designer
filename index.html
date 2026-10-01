@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>DFA Automata</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- =====================================================
+         TOP BAR
+    ====================================================== -->
+
+    <header class="topbar">
+
+        <div class="topbar-left">
+
+            <button
+                id="menuBtn"
+                class="icon-button menu-button"
+                title="Open navigation"
+            >
+                ☰
+            </button>
+
+            <div class="brand-icon">
+                δ
+            </div>
+
+            <div class="brand-text">
+                <h1>DFA Automata</h1>
+                <span>Interactive Finite Automaton Designer</span>
+            </div>
+
+        </div>
+
+        <div class="topbar-right">
+
+            <div
+                id="systemStatus"
+                class="system-status"
+            >
+                <span class="status-light"></span>
+                <span id="systemStatusText">
+                    Ready to build
+                </span>
+            </div>
+
+            <button
+                id="themeBtn"
+                class="icon-button"
+                title="Toggle theme"
+            >
+                ☾
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- =====================================================
+         NAVIGATION DRAWER
+    ====================================================== -->
+
+    <div
+        id="menuOverlay"
+        class="menu-overlay"
+    ></div>
+
+    <aside
+        id="navigationDrawer"
+        class="navigation-drawer"
+    >
+
+        <div class="drawer-header">
+
+            <div>
+                <span class="section-kicker">
+                    NAVIGATION
+                </span>
+
+                <h2>
+                    Control Center
+                </h2>
+            </div>
+
+            <button
+                id="closeMenuBtn"
+                class="icon-button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <nav class="drawer-nav">
+
+            <button
+                class="nav-item"
+                data-target="workspaceSection"
+            >
+                <span class="nav-icon">⌘</span>
+
+                <span>
+                    <strong>DFA Workspace</strong>
+                    <small>Build your automaton</small>
+                </span>
+            </button>
+
+
+            <button
+                class="nav-item"
+                data-target="alphabetSection"
+            >
+                <span class="nav-icon">Σ</span>
+
+                <span>
+                    <strong>Alphabet</strong>
+                    <small>Define input symbols</small>
+                </span>
+            </button>
+
+
+            <button
+                class="nav-item"
+                data-target="testingSection"
+            >
+                <span class="nav-icon">▶</span>
+
+                <span>
+                    <strong>Input Testing</strong>
+                    <small>Test your DFA</small>
+                </span>
+            </button>
+
+
+            <button
+                class="nav-item"
+                data-target="executionSection"
+            >
+                <span class="nav-icon">⌁</span>
+
+                <span>
+                    <strong>Execution Engine</strong>
+                    <small>View DFA execution</small>
+                </span>
+            </button>
+
+
+            <button
+                class="nav-item"
+                data-target="transitionSection"
+            >
+                <span class="nav-icon">→</span>
+
+                <span>
+                    <strong>Transition Table</strong>
+                    <small>View transitions</small>
+                </span>
+            </button>
+
+
+            <button
+                class="nav-item"
+                data-target="controlsSection"
+            >
+                <span class="nav-icon">⌘</span>
+
+                <span>
+                    <strong>Designer Controls</strong>
+                    <small>Alternative controls</small>
+                </span>
+            </button>
+
+
+            <button
+                class="nav-item"
+                data-target="activitySection"
+            >
+                <span class="nav-icon">≋</span>
+
+                <span>
+                    <strong>Activity History</strong>
+                    <small>View recent actions</small>
+                </span>
+            </button>
+
+        </nav>
+
+
+        <div class="drawer-actions">
+
+            <button
+                id="drawerUndoBtn"
+                class="secondary-button"
+            >
+                ↶ Undo
+            </button>
+
+            <button
+                id="drawerRedoBtn"
+                class="secondary-button"
+            >
+                ↷ Redo
+            </button>
+
+            <button
+                id="drawerThemeBtn"
+                class="secondary-button"
+            >
+                ☾ Toggle Theme
+            </button>
+
+            <button
+                id="drawerClearBtn"
+                class="danger-button"
+            >
+                × Clear Automaton
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+         MAIN APPLICATION
+    ====================================================== -->
+
+    <main class="application">
+
+        <!-- =================================================
+             LEFT COLUMN
+        ================================================== -->
+
+        <aside class="left-column">
+
+            <!-- AUTOMATON INFORMATION -->
+
+            <section
+                id="informationSection"
+                class="panel information-panel"
+            >
+
+                <div class="panel-heading">
+
+                    <div>
+                        <span class="section-kicker">
+                            AUTOMATION
+                        </span>
+
+                        <h2>
+                            Information
+                        </h2>
+                    </div>
+
+                    <span class="panel-icon">
+                        δ
+                    </span>
+
+                </div>
+
+
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+                        <span>STATES</span>
+                        <strong id="stateCount">0</strong>
+                        <small>Automaton nodes</small>
+                    </div>
+
+                    <div class="stat-card">
+                        <span>TRANSITIONS</span>
+                        <strong id="transitionCount">0</strong>
+                        <small>Defined connections</small>
+                    </div>
+
+                    <div class="stat-card">
+                        <span>START</span>
+                        <strong id="startStateInfo">—</strong>
+                        <small>Initial state</small>
+                    </div>
+
+                    <div class="stat-card">
+                        <span>FINAL</span>
+                        <strong id="finalStateInfo">—</strong>
+                        <small>Accepting states</small>
+                    </div>
+
+                </div>
+
+
+                <div class="alphabet-info-card">
+
+                    <span>ALPHABET</span>
+
+                    <strong id="alphabetInfo">
+                        —
+                    </strong>
+
+                    <small id="alphabetInfoCount">
+                        0 input symbols
+                    </small>
+
+                </div>
+
+
+                <div
+                    id="dfaStatus"
+                    class="dfa-status ready"
+                >
+
+                    <span class="status-dot"></span>
+
+                    <div>
+                        <strong>READY</strong>
+                        <small>Ready to build</small>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ACTIVITY HISTORY -->
+
+            <section
+                id="activitySection"
+                class="panel activity-panel"
+            >
+
+                <div class="panel-heading">
+
+                    <div>
+                        <span class="section-kicker">
+                            SYSTEM LOG
+                        </span>
+
+                        <h2>
+                            Activity History
+                        </h2>
+                    </div>
+
+                    <span class="panel-icon">
+                        ≋
+                    </span>
+
+                </div>
+
+                <div
+                    id="activityHistory"
+                    class="activity-history"
+                >
+
+                    <div class="empty-history">
+                        No activity yet.
+                    </div>
+
+                </div>
+
+            </section>
+
+        </aside>
+
+
+        <!-- =================================================
+             CENTER COLUMN
+        ================================================== -->
+
+        <section class="center-column">
+
+            <div
+                id="workspaceSection"
+                class="workspace-section"
+            >
+
+                <div class="workspace-heading">
+
+                    <div>
+
+                        <span class="section-kicker">
+                            DESIGN STUDIO
+                        </span>
+
+                        <h2>
+                            DFA Visual Workspace
+                        </h2>
+
+                        <p>
+                            Build your deterministic finite automaton
+                            directly on the canvas.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =========================================
+                     ALPHABET
+                ========================================== -->
+
+                <section
+                    id="alphabetSection"
+                    class="panel alphabet-panel"
+                >
+
+                    <div class="panel-heading">
+
+                        <div>
+
+                            <span class="section-kicker">
+                                INPUT DEFINITION
+                            </span>
+
+                            <h2>
+                                Alphabet
+                            </h2>
+
+                        </div>
+
+                        <span class="panel-icon">
+                            Σ
+                        </span>
+
+                    </div>
+
+
+                    <div class="alphabet-input-row">
+
+                        <input
+                            type="text"
+                            id="alphabet"
+                            placeholder="Example: 0, 1"
+                            autocomplete="off"
+                        >
+
+                        <button
+                            id="setAlphabetBtn"
+                            class="gradient-button"
+                        >
+                            Set Alphabet
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        id="alphabetDisplay"
+                        class="alphabet-display"
+                    >
+                        No alphabet defined.
+                    </div>
+
+
+                    <!-- STATE NAMING -->
+
+                    <div class="state-naming-area">
+
+                        <div class="state-naming-title">
+
+                            <div>
+                                <span class="mini-kicker">
+                                    STATE NAMING
+                                </span>
+
+                                <strong>
+                                    State Label Style
+                                </strong>
+                            </div>
+
+                            <span class="naming-help">
+                                Choose how new states are named
+                            </span>
+
+                        </div>
+
+
+                        <div class="state-naming-controls">
+
+                            <select id="stateNamingMode">
+
+                                <option value="q">
+                                    q0, q1, q2...
+                                </option>
+
+                                <option value="letters">
+                                    A, B, C, D...
+                                </option>
+
+                                <option value="custom">
+                                    Custom
+                                </option>
+
+                            </select>
+
+
+                            <input
+                                type="text"
+                                id="customStateName"
+                                placeholder="Custom state name"
+                                disabled
+                            >
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- =========================================
+                     VISUAL DESIGN MODE
+                ========================================== -->
+
+                <section class="panel visual-panel">
+
+                    <div class="visual-header">
+
+                        <div>
+
+                            <span class="section-kicker">
+                                VISUAL DESIGN MODE
+                            </span>
+
+                            <div class="tool-status">
+
+                                <span
+                                    id="toolStatusDot"
+                                    class="status-light"
+                                ></span>
+
+                                <span id="toolStatus">
+                                    Select a tool
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="visual-header-actions">
+
+                            <button
+                                id="undoBtn"
+                                class="tool-button"
+                                title="Undo previous action"
+                            >
+                                ↶ Undo
+                            </button>
+
+                            <button
+                                id="redoBtn"
+                                class="tool-button"
+                                title="Redo action"
+                            >
+                                ↷ Redo
+                            </button>
+
+                            <button
+                                id="clearBtn"
+                                class="tool-button danger-outline"
+                                title="Clear automaton"
+                            >
+                                × Clear
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- CANVAS -->
+
+                    <div
+                        id="canvasWrapper"
+                        class="canvas-wrapper"
+                    >
+
+                        <canvas id="dfaCanvas"></canvas>
+
+
+                        <div
+                            id="canvasHint"
+                            class="canvas-hint"
+                        >
+
+                            <span class="hint-icon">
+                                ✦
+                            </span>
+
+                            <strong>
+                                Click anywhere to create a state
+                            </strong>
+
+                            <small>
+                                Or use Designer Controls below
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- SHORTCUT GUIDE -->
+
+                    <div class="shortcut-strip">
+
+                        <span>
+                            <kbd>CLICK</kbd>
+                            Create state
+                        </span>
+
+                        <span>
+                            <kbd>DOUBLE CLICK</kbd>
+                            Final state
+                        </span>
+
+                        <span>
+                            <kbd>RIGHT CLICK</kbd>
+                            Start state
+                        </span>
+
+                        <span>
+                            <kbd>DRAG</kbd>
+                            Move state
+                        </span>
+
+                        <span>
+                            <kbd>SHIFT + CLICK</kbd>
+                            Create transition
+                        </span>
+
+                        <span>
+                            <kbd>SHIFT + CLICK SAME STATE</kbd>
+                            Self-loop
+                        </span>
+
+                    </div>
+
+                </section>
+
+
+                <!-- =========================================
+                     TRANSITION TABLE
+                ========================================== -->
+
+                <section
+                    id="transitionSection"
+                    class="panel transition-panel"
+                >
+
+                    <div class="panel-heading">
+
+                        <div>
+
+                            <span class="section-kicker">
+                                AUTOMATA FUNCTION
+                            </span>
+
+                            <h2>
+                                Transition Table
+                            </h2>
+
+                            <p>
+                                Automatically generated from
+                                the visual DFA.
+                            </p>
+
+                        </div>
+
+                        <span class="panel-icon">
+                            →
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        id="transitionTable"
+                        class="transition-table"
+                    >
+
+                        <div class="empty-table">
+                            Define an alphabet and create states.
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- =========================================
+                     DESIGNER CONTROLS
+                ========================================== -->
+
+                <section
+                    id="controlsSection"
+                    class="panel controls-panel"
+                >
+
+                    <div class="panel-heading">
+
+                        <div>
+
+                            <span class="section-kicker">
+                                ALTERNATIVE INPUT
+                            </span>
+
+                            <h2>
+                                Designer Controls
+                            </h2>
+
+                            <p>
+                                Use these buttons if you prefer
+                                not to use mouse shortcuts.
+                            </p>
+
+                        </div>
+
+                        <span class="panel-icon">
+                            ⌘
+                        </span>
+
+                    </div>
+
+
+                    <div class="designer-controls">
+
+                        <button
+                            class="designer-button"
+                            data-tool="create"
+                        >
+                            <span>＋</span>
+                            <div>
+                                <strong>Create State</strong>
+                                <small>Click canvas to create</small>
+                            </div>
+                        </button>
+
+
+                        <button
+                            class="designer-button"
+                            data-tool="start"
+                        >
+                            <span>→</span>
+                            <div>
+                                <strong>Set Start</strong>
+                                <small>Click a state</small>
+                            </div>
+                        </button>
+
+
+                        <button
+                            class="designer-button"
+                            data-tool="final"
+                        >
+                            <span>◎</span>
+                            <div>
+                                <strong>Set Final</strong>
+                                <small>Click a state</small>
+                            </div>
+                        </button>
+
+
+                        <button
+                            class="designer-button"
+                            data-tool="transition"
+                        >
+                            <span>↗</span>
+                            <div>
+                                <strong>Create Transition</strong>
+                                <small>Click source then target</small>
+                            </div>
+                        </button>
+
+
+                        <button
+                            class="designer-button"
+                            data-tool="move"
+                        >
+                            <span>✋</span>
+                            <div>
+                                <strong>Move State</strong>
+                                <small>Drag a state</small>
+                            </div>
+                        </button>
+
+
+                        <button
+                            id="deleteSelectedBtn"
+                            class="designer-button danger-control"
+                        >
+                            <span>×</span>
+                            <div>
+                                <strong>Delete Selected</strong>
+                                <small>Remove selected state</small>
+                            </div>
+                        </button>
+
+                    </div>
+
+
+                    <div class="controls-help">
+
+                        <strong>
+                            How it works
+                        </strong>
+
+                        <p>
+                            Choose a control above, then click the
+                            required object on the canvas. Your
+                            keyboard and mouse shortcuts continue
+                            to work normally.
+                        </p>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             RIGHT COLUMN
+        ================================================== -->
+
+        <aside class="right-column">
+
+            <!-- INPUT TESTING -->
+
+            <section
+                id="testingSection"
+                class="panel testing-panel"
+            >
+
+                <div class="panel-heading">
+
+                    <div>
+
+                        <span class="section-kicker">
+                            TESTING
+                        </span>
+
+                        <h2>
+                            Input Testing
+                        </h2>
+
+                    </div>
+
+                    <span class="panel-icon">
+                        ▶
+                    </span>
+
+                </div>
+
+
+                <label for="inputString">
+                    Input String
+                </label>
+
+                <input
+                    type="text"
+                    id="inputString"
+                    placeholder="Example: 0101"
+                    autocomplete="off"
+                >
+
+
+                <button
+                    id="runBtn"
+                    class="gradient-button full-button"
+                >
+                    ▶ Run DFA
+                </button>
+
+
+                <div
+                    id="result"
+                    class="result-box"
+                >
+
+                    <div class="empty-result">
+                        No input tested yet.
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- EXECUTION ENGINE -->
+
+            <section
+                id="executionSection"
+                class="panel execution-panel"
+            >
+
+                <div class="panel-heading">
+
+                    <div>
+
+                        <span class="section-kicker">
+                            EXECUTION ENGINE
+                        </span>
+
+                        <h2>
+                            DFA Execution
+                        </h2>
+
+                        <p>
+                            Step-by-step processing result
+                        </p>
+
+                    </div>
+
+                    <span class="panel-icon">
+                        ⌁
+                    </span>
+
+                </div>
+
+
+                <div
+                    id="executionResult"
+                    class="execution-result"
+                >
+
+                    <div class="execution-empty">
+
+                        <div class="execution-icon">
+                            ⌁
+                        </div>
+
+                        <strong>
+                            No input tested yet
+                        </strong>
+
+                        <small>
+                            Enter an input string and click Run DFA.
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </aside>
+
+    </main>
+
+
+    <script src="js/app.js"></script>
+
+</body>
+
+</html>
