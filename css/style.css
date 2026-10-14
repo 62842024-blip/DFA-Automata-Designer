@@ -72,6 +72,48 @@
     --radius-small:
         12px;
 
+    --card-bg:
+        rgba(255, 255, 255, 0.025);
+
+    --card-border:
+        rgba(220, 91, 255, 0.16);
+
+    --input-bg:
+        rgba(255, 255, 255, 0.035);
+
+    --input-border:
+        rgba(220, 91, 255, 0.20);
+
+    --dropdown-bg:
+        #150e26;
+
+    --dropdown-border:
+        rgba(220, 91, 255, 0.35);
+
+    --dropdown-hover:
+        rgba(255, 56, 168, 0.12);
+
+    --dropdown-selected:
+        rgba(220, 91, 255, 0.20);
+
+    --table-header-bg:
+        rgba(255, 56, 168, 0.08);
+
+    --table-header-color:
+        var(--pink-light);
+
+    --table-row-even:
+        rgba(255, 255, 255, 0.02);
+
+    --table-row-hover:
+        rgba(220, 91, 255, 0.10);
+
+    --table-cell-border:
+        rgba(220, 91, 255, 0.14);
+
+    --table-missing-color:
+        #a49cb5;
+
 }
 
 
@@ -692,7 +734,7 @@ button:disabled {
 .secondary-button:hover {
 
     color:
-        white;
+        var(--text);
 
     border-color:
         var(--border-strong);
@@ -975,7 +1017,7 @@ button:disabled {
         9px;
 
     color:
-        white;
+        var(--text);
 
     font-family:
         "Space Grotesk";
@@ -1417,7 +1459,7 @@ select {
         0 14px;
 
     border:
-        1px solid rgba(255,255,255,0.10);
+        1px solid var(--input-border);
 
     border-radius:
         12px;
@@ -1429,7 +1471,7 @@ select {
         var(--text);
 
     background:
-        rgba(255,255,255,0.035);
+        var(--input-bg);
 
     transition:
         0.2s ease;
@@ -1452,7 +1494,42 @@ select:focus {
         var(--purple);
 
     box-shadow:
-        0 0 0 3px rgba(138,77,255,0.10);
+        0 0 0 3px rgba(138,77,255,0.18);
+
+}
+
+
+input:disabled,
+select:disabled {
+
+    background:
+        rgba(255, 255, 255, 0.02);
+
+    color:
+        var(--text-muted);
+
+    border-color:
+        rgba(255, 255, 255, 0.06);
+
+    cursor:
+        not-allowed;
+
+    opacity:
+        0.65;
+
+}
+
+
+select option {
+
+    background-color:
+        var(--dropdown-bg);
+
+    color:
+        var(--text);
+
+    padding:
+        8px 12px;
 
 }
 
@@ -1678,6 +1755,399 @@ select:focus {
 }
 
 
+.alphabet-panel {
+
+    overflow:
+        visible;
+
+}
+
+
+.state-naming-area {
+
+    position:
+        relative;
+
+    overflow:
+        visible;
+
+}
+
+
+/* =========================================================
+   CUSTOM DROPDOWN
+========================================================= */
+
+.custom-dropdown {
+
+    position:
+        relative;
+
+    width:
+        100%;
+
+}
+
+
+.visually-hidden-select {
+
+    position:
+        absolute !important;
+
+    width:
+        1px !important;
+
+    height:
+        1px !important;
+
+    padding:
+        0 !important;
+
+    margin:
+        -1px !important;
+
+    overflow:
+        hidden !important;
+
+    clip:
+        rect(0, 0, 0, 0) !important;
+
+    white-space:
+        nowrap !important;
+
+    border:
+        0 !important;
+
+}
+
+
+.dropdown-trigger {
+
+    width:
+        100%;
+
+    min-height:
+        40px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+
+    padding:
+        0 12px;
+
+    border:
+        1px solid var(--input-border);
+
+    border-radius:
+        12px;
+
+    outline:
+        none;
+
+    color:
+        var(--text);
+
+    background:
+        var(--input-bg);
+
+    font-size:
+        11px;
+
+    font-weight:
+        500;
+
+    cursor:
+        pointer;
+
+    transition:
+        0.2s ease;
+
+}
+
+
+.dropdown-trigger:hover {
+
+    border-color:
+        var(--border-strong);
+
+    background:
+        rgba(255, 56, 168, 0.05);
+
+}
+
+
+.dropdown-trigger:focus-visible,
+.custom-dropdown.open .dropdown-trigger {
+
+    border-color:
+        var(--purple);
+
+    box-shadow:
+        0 0 0 3px rgba(138, 77, 255, 0.22);
+
+}
+
+
+.dropdown-trigger-label {
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+
+    white-space:
+        nowrap;
+
+}
+
+
+.dropdown-chevron {
+
+    color:
+        var(--pink-light);
+
+    font-size:
+        11px;
+
+    margin-left:
+        8px;
+
+    transition:
+        transform 0.2s ease;
+
+    user-select:
+        none;
+
+}
+
+
+.custom-dropdown.open .dropdown-chevron {
+
+    transform:
+        rotate(180deg);
+
+}
+
+
+.dropdown-menu {
+
+    position:
+        absolute;
+
+    top:
+        calc(100% + 6px);
+
+    left:
+        0;
+
+    right:
+        0;
+
+    z-index:
+        150;
+
+    display:
+        none;
+
+    flex-direction:
+        column;
+
+    gap:
+        4px;
+
+    padding:
+        6px;
+
+    border:
+        1px solid var(--dropdown-border);
+
+    border-radius:
+        13px;
+
+    background:
+        var(--dropdown-bg);
+
+    box-shadow:
+        0 15px 40px rgba(0, 0, 0, 0.65);
+
+    backdrop-filter:
+        blur(16px);
+
+    animation:
+        dropdownAnim 0.15s ease-out;
+
+}
+
+
+.custom-dropdown.open .dropdown-menu {
+
+    display:
+        flex;
+
+}
+
+
+@keyframes dropdownAnim {
+
+    from {
+        opacity:
+            0;
+        transform:
+            translateY(-4px);
+    }
+
+    to {
+        opacity:
+            1;
+        transform:
+            translateY(0);
+    }
+
+}
+
+
+.dropdown-option {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        10px;
+
+    padding:
+        9px 12px;
+
+    border-radius:
+        9px;
+
+    cursor:
+        pointer;
+
+    font-size:
+        11px;
+
+    color:
+        var(--text);
+
+    transition:
+        all 0.15s ease;
+
+    user-select:
+        none;
+
+    outline:
+        none;
+
+}
+
+
+.dropdown-option:hover,
+.dropdown-option:focus {
+
+    background:
+        var(--dropdown-hover);
+
+    color:
+        #ffffff;
+
+}
+
+
+.dropdown-option.selected {
+
+    background:
+        var(--dropdown-selected);
+
+    color:
+        #ffffff;
+
+    font-weight:
+        600;
+
+}
+
+
+.option-icon {
+
+    width:
+        22px;
+
+    height:
+        22px;
+
+    display:
+        grid;
+
+    place-items:
+        center;
+
+    border-radius:
+        6px;
+
+    background:
+        rgba(255, 56, 168, 0.12);
+
+    color:
+        var(--pink-light);
+
+    font-weight:
+        700;
+
+    font-size:
+        11px;
+
+    flex-shrink:
+        0;
+
+}
+
+
+.option-text {
+
+    flex:
+        1;
+
+}
+
+
+.option-check {
+
+    color:
+        var(--pink-light);
+
+    font-size:
+        12px;
+
+    opacity:
+        0;
+
+    margin-left:
+        auto;
+
+    font-weight:
+        700;
+
+}
+
+
+.dropdown-option.selected .option-check {
+
+    opacity:
+        1;
+
+}
+
+
 /* =========================================================
    VISUAL PANEL
 ========================================================= */
@@ -1782,13 +2252,13 @@ select:focus {
 .tool-button:hover:not(:disabled) {
 
     color:
-        white;
+        var(--text);
 
     border-color:
         var(--border-strong);
 
     background:
-        rgba(255,56,168,0.07);
+        rgba(255,56,168,0.08);
 
 }
 
@@ -2093,7 +2563,7 @@ kbd {
         hidden;
 
     border:
-        1px solid rgba(255,255,255,0.08);
+        1px solid var(--border);
 
     border-radius:
         12px;
@@ -2108,10 +2578,10 @@ kbd {
         12px 14px;
 
     border-right:
-        1px solid rgba(255,255,255,0.06);
+        1px solid var(--table-cell-border);
 
     border-bottom:
-        1px solid rgba(255,255,255,0.06);
+        1px solid var(--table-cell-border);
 
     text-align:
         center;
@@ -2119,16 +2589,45 @@ kbd {
     font-size:
         11px;
 
+    transition:
+        background 0.15s ease, color 0.15s ease;
+
+}
+
+
+.transition-table th:last-child,
+.transition-table td:last-child {
+
+    border-right:
+        none;
+
+}
+
+
+.transition-table tr:last-child td {
+
+    border-bottom:
+        none;
+
 }
 
 
 .transition-table th {
 
     color:
-        var(--pink-light);
+        var(--table-header-color);
 
     background:
-        rgba(255,56,168,0.07);
+        var(--table-header-bg);
+
+    font-weight:
+        700;
+
+    font-family:
+        "Space Grotesk", sans-serif;
+
+    letter-spacing:
+        0.5px;
 
 }
 
@@ -2139,7 +2638,34 @@ kbd {
         var(--text-secondary);
 
     background:
-        rgba(255,255,255,0.015);
+        var(--card-bg);
+
+}
+
+
+.transition-table tbody tr:nth-child(even) td {
+
+    background:
+        var(--table-row-even);
+
+}
+
+
+.transition-table tbody tr:hover td {
+
+    background:
+        var(--table-row-hover);
+
+}
+
+
+.transition-table tbody tr.selected-row td {
+
+    background:
+        rgba(220, 91, 255, 0.16);
+
+    color:
+        #ffffff;
 
 }
 
@@ -2147,7 +2673,7 @@ kbd {
 .transition-table .state-cell {
 
     color:
-        white;
+        var(--text);
 
     font-weight:
         700;
@@ -2155,13 +2681,47 @@ kbd {
     text-align:
         left;
 
+    font-family:
+        "Space Grotesk", sans-serif;
+
+}
+
+
+.transition-table .start-marker {
+
+    color:
+        var(--pink-light);
+
+    font-weight:
+        800;
+
+    margin-right:
+        3px;
+
+}
+
+
+.transition-table .final-marker {
+
+    color:
+        var(--purple-light);
+
+    font-weight:
+        800;
+
+    margin-right:
+        3px;
+
 }
 
 
 .transition-table .missing {
 
     color:
-        #5e5869;
+        var(--table-missing-color);
+
+    font-weight:
+        600;
 
 }
 
@@ -2321,6 +2881,32 @@ kbd {
 
     color:
         var(--red);
+
+}
+
+
+.danger-control:hover,
+.danger-control.active {
+
+    border-color:
+        rgba(255, 77, 77, 0.45);
+
+    background:
+        rgba(255, 77, 77, 0.08);
+
+    transform:
+        translateY(-1px);
+
+}
+
+
+.danger-control > span {
+
+    color:
+        var(--red);
+
+    background:
+        rgba(255, 77, 77, 0.1);
 
 }
 
@@ -2673,7 +3259,7 @@ kbd {
 .final-state-info strong {
 
     color:
-        white;
+        var(--text);
 
 }
 
@@ -2976,32 +3562,89 @@ body.light-mode {
         #ffffff;
 
     --panel:
-        rgba(255,255,255,0.92);
+        rgba(255, 255, 255, 0.95);
+
+    --panel-light:
+        rgba(245, 238, 255, 0.85);
 
     --text:
-        #1d1730;
+        #171126;
 
     --text-secondary:
-        #5e566b;
+        #493f5a;
 
     --text-muted:
-        #837a91;
+        #5e546e;
 
     --border:
-        rgba(116,67,177,0.16);
+        rgba(116, 67, 177, 0.22);
 
     --border-strong:
-        rgba(116,67,177,0.35);
+        rgba(116, 67, 177, 0.45);
+
+    --pink:
+        #ff38a8;
+
+    --pink-light:
+        #c91a79;
+
+    --purple:
+        #8a4dff;
+
+    --purple-light:
+        #6b21a8;
+
+    --card-bg:
+        #ffffff;
+
+    --card-border:
+        rgba(116, 67, 177, 0.18);
+
+    --input-bg:
+        #ffffff;
+
+    --input-border:
+        rgba(116, 67, 177, 0.25);
+
+    --dropdown-bg:
+        #ffffff;
+
+    --dropdown-border:
+        rgba(116, 67, 177, 0.26);
+
+    --dropdown-hover:
+        rgba(138, 77, 255, 0.08);
+
+    --dropdown-selected:
+        rgba(138, 77, 255, 0.14);
+
+    --table-header-bg:
+        rgba(138, 77, 255, 0.09);
+
+    --table-header-color:
+        #5b149b;
+
+    --table-row-even:
+        #faf7fd;
+
+    --table-row-hover:
+        rgba(138, 77, 255, 0.09);
+
+    --table-cell-border:
+        rgba(116, 67, 177, 0.14);
+
+    --table-missing-color:
+        #6e6382;
 
     background:
         radial-gradient(
             circle at 15% 10%,
-            rgba(255,56,168,0.12),
+            rgba(255, 56, 168, 0.10),
             transparent 30%
         ),
         radial-gradient(
             circle at 85% 10%,
-            rgba(138,77,255,0.12),
+            rgba(138, 77, 255, 0.10),
             transparent 30%
         ),
         #f4f0fa;
@@ -3012,7 +3655,68 @@ body.light-mode {
 body.light-mode .topbar {
 
     background:
-        rgba(250,247,255,0.90);
+        rgba(255, 255, 255, 0.95);
+
+    border-bottom:
+        1px solid rgba(116, 67, 177, 0.16);
+
+    box-shadow:
+        0 4px 25px rgba(73, 46, 105, 0.06);
+
+}
+
+
+body.light-mode .brand-text h1 {
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .brand-text span {
+
+    color:
+        #5e546e;
+
+}
+
+
+body.light-mode .system-status {
+
+    background:
+        rgba(116, 67, 177, 0.04);
+
+    border-color:
+        rgba(116, 67, 177, 0.20);
+
+    color:
+        #493f5a;
+
+}
+
+
+body.light-mode .icon-button {
+
+    background:
+        #ffffff;
+
+    border-color:
+        rgba(116, 67, 177, 0.22);
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .icon-button:hover {
+
+    background:
+        rgba(138, 77, 255, 0.08);
+
+    border-color:
+        rgba(138, 77, 255, 0.35);
 
 }
 
@@ -3020,10 +3724,56 @@ body.light-mode .topbar {
 body.light-mode .panel {
 
     background:
-        rgba(255,255,255,0.90);
+        rgba(255, 255, 255, 0.95);
+
+    border-color:
+        rgba(116, 67, 177, 0.20);
 
     box-shadow:
-        0 15px 50px rgba(73,46,105,0.10);
+        0 15px 50px rgba(73, 46, 105, 0.08);
+
+}
+
+
+body.light-mode .panel::before {
+
+    background:
+        linear-gradient(
+            120deg,
+            rgba(255, 56, 168, 0.02),
+            transparent 45%,
+            rgba(139, 77, 255, 0.02)
+        );
+
+}
+
+
+body.light-mode .panel-heading h2 {
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .panel-heading p {
+
+    color:
+        #5e546e;
+
+}
+
+
+body.light-mode .panel-icon {
+
+    border-color:
+        rgba(201, 26, 121, 0.30);
+
+    background:
+        rgba(201, 26, 121, 0.08);
+
+    color:
+        #c91a79;
 
 }
 
@@ -3033,6 +3783,9 @@ body.light-mode .canvas-wrapper {
     background:
         #f8f5fc;
 
+    border-color:
+        rgba(116, 67, 177, 0.18);
+
 }
 
 
@@ -3040,14 +3793,47 @@ body.light-mode .canvas-wrapper::before {
 
     background-image:
         linear-gradient(
-            rgba(123,79,177,0.08) 1px,
+            rgba(123, 79, 177, 0.08) 1px,
             transparent 1px
         ),
         linear-gradient(
             90deg,
-            rgba(123,79,177,0.08) 1px,
+            rgba(123, 79, 177, 0.08) 1px,
             transparent 1px
         );
+
+}
+
+
+body.light-mode .canvas-hint {
+
+    background:
+        rgba(255, 255, 255, 0.96);
+
+    border-color:
+        rgba(116, 67, 177, 0.22);
+
+    box-shadow:
+        0 10px 30px rgba(73, 46, 105, 0.10);
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .canvas-hint strong {
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .canvas-hint small {
+
+    color:
+        #5e546e;
 
 }
 
@@ -3058,8 +3844,183 @@ body.light-mode .navigation-drawer {
         linear-gradient(
             180deg,
             #ffffff,
-            #f3eef9
+            #f6f1fc
         );
+
+    border-right-color:
+        rgba(116, 67, 177, 0.20);
+
+    box-shadow:
+        10px 0 40px rgba(73, 46, 105, 0.12);
+
+}
+
+
+body.light-mode .drawer-header h2 {
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .nav-item {
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .nav-item:hover {
+
+    background:
+        rgba(138, 77, 255, 0.08);
+
+    border-color:
+        rgba(138, 77, 255, 0.25);
+
+}
+
+
+body.light-mode .nav-icon {
+
+    background:
+        rgba(138, 77, 255, 0.08);
+
+    border-color:
+        rgba(138, 77, 255, 0.20);
+
+    color:
+        #6b21a8;
+
+}
+
+
+body.light-mode .nav-item strong {
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .nav-item small {
+
+    color:
+        #5e546e;
+
+}
+
+
+body.light-mode .secondary-button {
+
+    background:
+        #ffffff;
+
+    border-color:
+        rgba(116, 67, 177, 0.22);
+
+    color:
+        #35294a;
+
+}
+
+
+body.light-mode .secondary-button:hover {
+
+    background:
+        rgba(138, 77, 255, 0.08);
+
+    border-color:
+        rgba(138, 77, 255, 0.40);
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .tool-button {
+
+    background:
+        #ffffff;
+
+    border-color:
+        rgba(116, 67, 177, 0.22);
+
+    color:
+        #35294a;
+
+}
+
+
+body.light-mode .tool-button:hover:not(:disabled) {
+
+    background:
+        rgba(255, 56, 168, 0.08);
+
+    border-color:
+        rgba(255, 56, 168, 0.45);
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .danger-button {
+
+    border-color:
+        rgba(239, 68, 68, 0.40);
+
+    color:
+        #dc2626;
+
+    background:
+        #ffffff;
+
+}
+
+
+body.light-mode .danger-button:hover {
+
+    background:
+        rgba(239, 68, 68, 0.08);
+
+    border-color:
+        #dc2626;
+
+    color:
+        #b91c1c;
+
+}
+
+
+body.light-mode .danger-outline {
+
+    border-color:
+        rgba(239, 68, 68, 0.40);
+
+    color:
+        #dc2626;
+
+    background:
+        #ffffff;
+
+}
+
+
+body.light-mode .danger-outline:hover:not(:disabled) {
+
+    background:
+        rgba(239, 68, 68, 0.08);
+
+    border-color:
+        #dc2626;
+
+    color:
+        #b91c1c;
 
 }
 
@@ -3068,28 +4029,776 @@ body.light-mode input,
 body.light-mode select {
 
     color:
-        #221b30;
+        #171126;
 
     background:
-        rgba(90,50,120,0.035);
+        #ffffff;
+
+    border-color:
+        rgba(116, 67, 177, 0.25);
 
 }
 
 
-body.light-mode .canvas-hint {
+body.light-mode input::placeholder {
 
-    background:
-        rgba(255,255,255,0.90);
+    color:
+        #8c829d;
 
 }
 
 
-body.light-mode .stat-card,
-body.light-mode .alphabet-display,
+body.light-mode input:focus,
+body.light-mode select:focus {
+
+    border-color:
+        var(--purple);
+
+    box-shadow:
+        0 0 0 3px rgba(138, 77, 255, 0.16);
+
+}
+
+
+body.light-mode input:disabled,
+body.light-mode select:disabled {
+
+    background:
+        rgba(116, 67, 177, 0.05);
+
+    color:
+        #9287a3;
+
+    border-color:
+        rgba(116, 67, 177, 0.15);
+
+}
+
+
+body.light-mode select option {
+
+    background-color:
+        #ffffff;
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .dropdown-trigger {
+
+    background:
+        #ffffff;
+
+    border-color:
+        rgba(116, 67, 177, 0.25);
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .dropdown-trigger:hover {
+
+    border-color:
+        rgba(138, 77, 255, 0.45);
+
+    background:
+        rgba(138, 77, 255, 0.05);
+
+}
+
+
+body.light-mode .dropdown-trigger:focus-visible,
+body.light-mode .custom-dropdown.open .dropdown-trigger {
+
+    border-color:
+        var(--purple);
+
+    box-shadow:
+        0 0 0 3px rgba(138, 77, 255, 0.18);
+
+}
+
+
+body.light-mode .dropdown-menu {
+
+    background:
+        #ffffff;
+
+    border-color:
+        rgba(116, 67, 177, 0.26);
+
+    box-shadow:
+        0 15px 40px rgba(73, 46, 105, 0.16),
+        0 2px 6px rgba(73, 46, 105, 0.06);
+
+}
+
+
+body.light-mode .dropdown-option {
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .dropdown-option:hover,
+body.light-mode .dropdown-option:focus {
+
+    background:
+        rgba(138, 77, 255, 0.08);
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .dropdown-option.selected {
+
+    background:
+        rgba(138, 77, 255, 0.14);
+
+    color:
+        #5b149b;
+
+}
+
+
+body.light-mode .dropdown-option .option-icon {
+
+    background:
+        rgba(138, 77, 255, 0.09);
+
+    color:
+        #6b21a8;
+
+}
+
+
+body.light-mode .dropdown-option.selected .option-check {
+
+    color:
+        #c91a79;
+
+}
+
+
+body.light-mode .stat-card {
+
+    background:
+        #ffffff;
+
+    border-color:
+        rgba(116, 67, 177, 0.16);
+
+    box-shadow:
+        0 4px 15px rgba(73, 46, 105, 0.03);
+
+}
+
+
+body.light-mode .stat-card span {
+
+    color:
+        #5e546e;
+
+    font-weight:
+        600;
+
+}
+
+
+body.light-mode .stat-card strong {
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .stat-card small {
+
+    color:
+        #6e647e;
+
+}
+
+
+body.light-mode .alphabet-info-card {
+
+    background:
+        rgba(255, 56, 168, 0.04);
+
+    border-color:
+        rgba(201, 26, 121, 0.22);
+
+}
+
+
+body.light-mode .alphabet-info-card span {
+
+    color:
+        #5e546e;
+
+    font-weight:
+        600;
+
+}
+
+
+body.light-mode .alphabet-info-card strong {
+
+    color:
+        #c91a79;
+
+}
+
+
+body.light-mode .alphabet-info-card small {
+
+    color:
+        #6e647e;
+
+}
+
+
+body.light-mode .alphabet-display {
+
+    background:
+        #ffffff;
+
+    border-color:
+        rgba(116, 67, 177, 0.18);
+
+    color:
+        #5e546e;
+
+}
+
+
+body.light-mode .state-naming-area {
+
+    background:
+        rgba(116, 67, 177, 0.035);
+
+    border-color:
+        rgba(116, 67, 177, 0.18);
+
+}
+
+
+body.light-mode .state-naming-title strong {
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .naming-help {
+
+    color:
+        #5e546e;
+
+}
+
+
+body.light-mode .visual-header {
+
+    border-bottom-color:
+        rgba(116, 67, 177, 0.14);
+
+}
+
+
+body.light-mode .shortcut-strip {
+
+    background:
+        rgba(116, 67, 177, 0.03);
+
+    border-top-color:
+        rgba(116, 67, 177, 0.14);
+
+}
+
+
+body.light-mode .shortcut-strip span {
+
+    color:
+        #5e546e;
+
+}
+
+
+body.light-mode kbd {
+
+    background:
+        #ffffff;
+
+    border-color:
+        rgba(116, 67, 177, 0.22);
+
+    color:
+        #35294a;
+
+    box-shadow:
+        0 1px 3px rgba(73, 46, 105, 0.05);
+
+}
+
+
+body.light-mode .designer-button {
+
+    background:
+        #ffffff;
+
+    border-color:
+        rgba(116, 67, 177, 0.18);
+
+    color:
+        #171126;
+
+    box-shadow:
+        0 2px 8px rgba(73, 46, 105, 0.03);
+
+}
+
+
+body.light-mode .designer-button:hover,
+body.light-mode .designer-button.active {
+
+    border-color:
+        rgba(255, 56, 168, 0.55);
+
+    background:
+        rgba(255, 56, 168, 0.06);
+
+}
+
+
+body.light-mode .designer-button > span {
+
+    background:
+        rgba(201, 26, 121, 0.09);
+
+    color:
+        #c91a79;
+
+}
+
+
+body.light-mode .designer-button strong {
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .designer-button small {
+
+    color:
+        #5e546e;
+
+}
+
+
+body.light-mode .danger-control {
+
+    color:
+        #dc2626;
+
+}
+
+
+body.light-mode .danger-control:hover,
+body.light-mode .danger-control.active {
+
+    border-color:
+        rgba(239, 68, 68, 0.5);
+
+    background:
+        rgba(239, 68, 68, 0.06);
+
+}
+
+
 body.light-mode .controls-help {
 
     background:
-        rgba(80,45,120,0.025);
+        rgba(116, 67, 177, 0.035);
+
+    border-color:
+        rgba(116, 67, 177, 0.16);
+
+}
+
+
+body.light-mode .controls-help strong {
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .controls-help p {
+
+    color:
+        #5e546e;
+
+}
+
+
+body.light-mode .transition-table table {
+
+    border-color:
+        rgba(116, 67, 177, 0.22);
+
+    box-shadow:
+        0 4px 20px rgba(116, 67, 177, 0.05);
+
+}
+
+
+body.light-mode .transition-table th {
+
+    color:
+        #5b149b;
+
+    background:
+        rgba(138, 77, 255, 0.09);
+
+}
+
+
+body.light-mode .transition-table td {
+
+    color:
+        #2b2040;
+
+    background:
+        #ffffff;
+
+    border-right-color:
+        rgba(116, 67, 177, 0.14);
+
+    border-bottom-color:
+        rgba(116, 67, 177, 0.14);
+
+}
+
+
+body.light-mode .transition-table tbody tr:nth-child(even) td {
+
+    background:
+        #faf7fd;
+
+}
+
+
+body.light-mode .transition-table tbody tr:hover td {
+
+    background:
+        rgba(138, 77, 255, 0.09);
+
+}
+
+
+body.light-mode .transition-table tbody tr.selected-row td {
+
+    background:
+        rgba(138, 77, 255, 0.16);
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .transition-table .state-cell {
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .transition-table .start-marker {
+
+    color:
+        #c91a79;
+
+}
+
+
+body.light-mode .transition-table .final-marker {
+
+    color:
+        #6b21a8;
+
+}
+
+
+body.light-mode .transition-table .missing {
+
+    color:
+        #6e6382;
+
+}
+
+
+body.light-mode .empty-table {
+
+    color:
+        #6e647e;
+
+}
+
+
+body.light-mode .empty-result {
+
+    background:
+        #ffffff;
+
+    border-color:
+        rgba(116, 67, 177, 0.18);
+
+    color:
+        #6e647e;
+
+}
+
+
+body.light-mode .simulation-step {
+
+    background:
+        rgba(116, 67, 177, 0.05);
+
+    border:
+        1px solid rgba(116, 67, 177, 0.14);
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .step-number {
+
+    color:
+        #c91a79;
+
+    font-weight:
+        700;
+
+}
+
+
+body.light-mode .step-arrow {
+
+    color:
+        #5e546e;
+
+}
+
+
+body.light-mode .simulation-title {
+
+    color:
+        #5e546e;
+
+}
+
+
+body.light-mode .final-state-info {
+
+    border-top-color:
+        rgba(116, 67, 177, 0.16);
+
+    color:
+        #5e546e;
+
+}
+
+
+body.light-mode .final-state-info strong {
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .execution-empty {
+
+    color:
+        #5e546e;
+
+}
+
+
+body.light-mode .execution-empty strong {
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .execution-empty small {
+
+    color:
+        #6e647e;
+
+}
+
+
+body.light-mode .execution-icon {
+
+    background:
+        rgba(138, 77, 255, 0.08);
+
+    border-color:
+        rgba(138, 77, 255, 0.22);
+
+    color:
+        #6b21a8;
+
+}
+
+
+body.light-mode .execution-card {
+
+    background:
+        #ffffff;
+
+    border-color:
+        rgba(16, 185, 129, 0.35);
+
+    box-shadow:
+        0 4px 15px rgba(73, 46, 105, 0.04);
+
+}
+
+
+body.light-mode .execution-card.rejected {
+
+    border-color:
+        rgba(239, 68, 68, 0.35);
+
+}
+
+
+body.light-mode .execution-card-header strong {
+
+    color:
+        #065f46;
+
+}
+
+
+body.light-mode .execution-card.rejected .execution-card-header strong {
+
+    color:
+        #991b1b;
+
+}
+
+
+body.light-mode .execution-input {
+
+    color:
+        #5e546e;
+
+}
+
+
+body.light-mode .execution-trace-title {
+
+    color:
+        #5e546e;
+
+}
+
+
+body.light-mode .execution-step {
+
+    background:
+        rgba(116, 67, 177, 0.04);
+
+    border:
+        1px solid rgba(116, 67, 177, 0.12);
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .execution-step .step-index {
+
+    color:
+        #c91a79;
+
+    font-weight:
+        700;
+
+}
+
+
+body.light-mode .execution-final {
+
+    border-top-color:
+        rgba(116, 67, 177, 0.16);
+
+    color:
+        #5e546e;
+
+}
+
+
+body.light-mode .execution-final strong {
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .activity-item {
+
+    border-bottom-color:
+        rgba(116, 67, 177, 0.12);
+
+}
+
+
+body.light-mode .activity-item strong {
+
+    color:
+        #171126;
+
+}
+
+
+body.light-mode .activity-item time {
+
+    color:
+        #6e647e;
+
+}
+
+
+body.light-mode .empty-history {
+
+    color:
+        #6e647e;
 
 }
 

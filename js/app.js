@@ -250,6 +250,8 @@ function restoreSnapshot(snapshot) {
     stateNamingMode.value =
         namingMode;
 
+    syncCustomDropdown(namingMode);
+
 
     customStateName.disabled =
         namingMode !== "custom";
@@ -606,6 +608,8 @@ stateNamingMode.addEventListener(
         namingMode =
             stateNamingMode.value;
 
+        syncCustomDropdown(namingMode);
+
 
         customStateName.disabled =
             namingMode !== "custom";
@@ -627,6 +631,171 @@ stateNamingMode.addEventListener(
 
     }
 );
+
+
+/* =========================================================
+   CUSTOM STATE NAMING DROPDOWN
+========================================================= */
+
+function syncCustomDropdown(value) {
+
+    const triggerLabel =
+        document.getElementById("stateNamingLabel");
+
+    const menu =
+        document.getElementById("stateNamingMenu");
+
+    if (!menu) {
+        return;
+    }
+
+
+    const options =
+        menu.querySelectorAll(".dropdown-option");
+
+    options.forEach(opt => {
+
+        const isSelected =
+            opt.dataset.value === value;
+
+        opt.classList.toggle("selected", isSelected);
+        opt.setAttribute("aria-selected", isSelected ? "true" : "false");
+
+        if (isSelected && triggerLabel) {
+
+            const textSpan =
+                opt.querySelector(".option-text");
+
+            if (textSpan) {
+                triggerLabel.textContent =
+                    textSpan.textContent.trim();
+            }
+
+        }
+
+    });
+
+}
+
+
+function setupCustomDropdown() {
+
+    const dropdown =
+        document.getElementById("stateNamingDropdown");
+
+    const trigger =
+        document.getElementById("stateNamingTrigger");
+
+    const menu =
+        document.getElementById("stateNamingMenu");
+
+    if (!dropdown || !trigger || !menu) {
+        return;
+    }
+
+
+    function toggleMenu() {
+
+        if (dropdown.classList.contains("open")) {
+            closeMenu();
+        } else {
+            openMenu();
+        }
+
+    }
+
+
+    function openMenu() {
+
+        dropdown.classList.add("open");
+        trigger.setAttribute("aria-expanded", "true");
+
+    }
+
+
+    function closeMenu() {
+
+        dropdown.classList.remove("open");
+        trigger.setAttribute("aria-expanded", "false");
+
+    }
+
+
+    trigger.addEventListener("click", function (e) {
+
+        e.preventDefault();
+        e.stopPropagation();
+        toggleMenu();
+
+    });
+
+
+    const options =
+        menu.querySelectorAll(".dropdown-option");
+
+    options.forEach(opt => {
+
+        function selectThisOption() {
+
+            const val =
+                opt.dataset.value;
+
+            if (stateNamingMode.value !== val) {
+                stateNamingMode.value = val;
+                stateNamingMode.dispatchEvent(new Event("change"));
+            } else {
+                syncCustomDropdown(val);
+            }
+
+            closeMenu();
+            trigger.focus();
+
+        }
+
+
+        opt.addEventListener("click", function (e) {
+
+            e.preventDefault();
+            e.stopPropagation();
+            selectThisOption();
+
+        });
+
+
+        opt.addEventListener("keydown", function (e) {
+
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                selectThisOption();
+            }
+
+        });
+
+    });
+
+
+    document.addEventListener("click", function (e) {
+
+        if (!dropdown.contains(e.target)) {
+            closeMenu();
+        }
+
+    });
+
+
+    document.addEventListener("keydown", function (e) {
+
+        if (e.key === "Escape" && dropdown.classList.contains("open")) {
+            closeMenu();
+            trigger.focus();
+        }
+
+    });
+
+
+    syncCustomDropdown(stateNamingMode.value || namingMode);
+
+}
 
 
 /* =========================================================
@@ -1148,26 +1317,14 @@ function createTransition(
 
 
 /* =========================================================
-   DELETE SELECTED STATE
+   DELETE STATE ACTION
 ========================================================= */
 
-function deleteSelectedState() {
+function deleteState(state) {
 
-    if (
-        !selectedState
-    ) {
-
-        alert(
-            "Select a state first."
-        );
-
+    if (!state) {
         return;
-
     }
-
-
-    const state =
-        selectedState;
 
 
     saveHistory(
@@ -1194,12 +1351,22 @@ function deleteSelectedState() {
         );
 
 
-    selectedState =
-        null;
+    if (
+        selectedState &&
+        selectedState.id === state.id
+    ) {
+        selectedState =
+            null;
+    }
 
 
-    transitionStart =
-        null;
+    if (
+        transitionStart &&
+        transitionStart.id === state.id
+    ) {
+        transitionStart =
+            null;
+    }
 
 
     addActivity(
@@ -1212,9 +1379,70 @@ function deleteSelectedState() {
 }
 
 
+function deleteSelectedState() {
+
+    if (
+        !selectedState
+    ) {
+
+        alert(
+            "Select a state first."
+        );
+
+        return;
+
+    }
+
+
+    deleteState(
+        selectedState
+    );
+
+}
+
+
 deleteSelectedBtn.addEventListener(
     "click",
     deleteSelectedState
+);
+
+
+/* KEYBOARD SHORTCUT (DEL / BACKSPACE) */
+
+document.addEventListener(
+    "keydown",
+    function (event) {
+
+        const activeTag =
+            document.activeElement
+                ? document.activeElement.tagName
+                : "";
+
+
+        if (
+            activeTag === "INPUT" ||
+            activeTag === "TEXTAREA" ||
+            activeTag === "SELECT" ||
+            (document.activeElement &&
+             document.activeElement.isContentEditable)
+        ) {
+            return;
+        }
+
+
+        if (
+            event.key === "Delete" ||
+            event.key === "Backspace"
+        ) {
+
+            if (selectedState) {
+                event.preventDefault();
+                deleteState(selectedState);
+            }
+
+        }
+
+    }
 );
 
 
@@ -1237,6 +1465,42 @@ canvas.addEventListener(
                 position.x,
                 position.y
             );
+
+
+        if (
+            event.altKey &&
+            state
+        ) {
+
+            deleteState(
+                state
+            );
+
+            return;
+
+        }
+
+
+        /* -----------------------------------------------
+           DELETE MODE
+        ------------------------------------------------ */
+
+        if (
+            currentTool ===
+            "delete"
+        ) {
+
+            if (state) {
+
+                deleteState(
+                    state
+                );
+
+            }
+
+            return;
+
+        }
 
 
         /* -----------------------------------------------
@@ -1482,8 +1746,17 @@ canvas.addEventListener(
         }
 
 
+        /*
+         * Guard: only handle Shift+mousedown if the
+         * direct target is the canvas itself, so that
+         * Shift-selecting text in result panels or other
+         * elements does not accidentally switch the tool
+         * to transition mode.
+         */
+
         if (
-            !event.shiftKey
+            !event.shiftKey ||
+            event.target !== canvas
         ) {
 
             return;
@@ -1700,6 +1973,29 @@ canvas.addEventListener(
 
 
 /* =========================================================
+   DOCUMENT MOUSE UP – failsafe to clear isDragging when
+   the mouse button is released anywhere outside the canvas
+   so drag state never gets permanently stuck.
+========================================================= */
+
+document.addEventListener(
+    "mouseup",
+    function () {
+
+        if (
+            isDragging
+        ) {
+
+            isDragging =
+                false;
+
+        }
+
+    }
+);
+
+
+/* =========================================================
    CLAMP STATE
 ========================================================= */
 
@@ -1825,7 +2121,10 @@ function updateToolStatus() {
                 : "Create Transition — click source then target",
 
         move:
-            "Move State — drag a state"
+            "Move State — drag a state",
+
+        delete:
+            "Delete State — click a state to remove"
 
     };
 
@@ -1844,6 +2143,16 @@ function updateToolStatus() {
 
         toolStatusDot.style.boxShadow =
             "0 0 12px var(--yellow)";
+
+    } else if (
+        currentTool === "delete"
+    ) {
+
+        toolStatusDot.style.background =
+            "var(--red)";
+
+        toolStatusDot.style.boxShadow =
+            "0 0 12px var(--red)";
 
     } else {
 
@@ -2758,20 +3067,25 @@ function updateTransitionTable() {
     states.forEach(
         state => {
 
+            const isSelected =
+                selectedState &&
+                selectedState.id === state.id;
+
+
             html += `
-                <tr>
+                <tr class="${isSelected ? "selected-row" : ""}">
 
                     <td class="state-cell">
 
                         ${
                             state.isStart
-                                ? "→ "
+                                ? '<span class="start-marker">→</span> '
                                 : ""
                         }
 
                         ${
                             state.isFinal
-                                ? "◎ "
+                                ? '<span class="final-marker">◎</span> '
                                 : ""
                         }
 
@@ -3137,6 +3451,19 @@ runBtn.addEventListener(
 
 
 function runDFA() {
+
+    /*
+     * Always restore design mode when the user presses
+     * Run DFA — regardless of whether the run succeeds,
+     * fails validation, or encounters missing transitions.
+     * This ensures the canvas remains fully interactive
+     * after every test, without requiring a page reload.
+     */
+
+    setTool(
+        "create"
+    );
+
 
     if (
         alphabet.length === 0
@@ -3876,6 +4203,8 @@ function toggleTheme() {
             : "Dark mode enabled"
     );
 
+    draw();
+
 }
 
 
@@ -4110,8 +4439,14 @@ function updateAll() {
 
 function initialize() {
 
+    setupCustomDropdown();
+
     stateNamingMode.value =
         namingMode;
+
+    syncCustomDropdown(
+        namingMode
+    );
 
 
     customStateName.disabled =

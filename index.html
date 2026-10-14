@@ -485,21 +485,76 @@
 
                         <div class="state-naming-controls">
 
-                            <select id="stateNamingMode">
+                            <div class="custom-dropdown" id="stateNamingDropdown">
+                                <button
+                                    type="button"
+                                    class="dropdown-trigger"
+                                    id="stateNamingTrigger"
+                                    aria-haspopup="listbox"
+                                    aria-expanded="false"
+                                    title="Choose state naming format"
+                                >
+                                    <span class="dropdown-trigger-label" id="stateNamingLabel">
+                                        q0, q1, q2...
+                                    </span>
+                                    <span class="dropdown-chevron" aria-hidden="true">▾</span>
+                                </button>
 
-                                <option value="q">
-                                    q0, q1, q2...
-                                </option>
+                                <div
+                                    class="dropdown-menu"
+                                    id="stateNamingMenu"
+                                    role="listbox"
+                                    aria-labelledby="stateNamingTrigger"
+                                >
+                                    <div
+                                        class="dropdown-option selected"
+                                        data-value="q"
+                                        role="option"
+                                        aria-selected="true"
+                                        tabindex="0"
+                                    >
+                                        <span class="option-icon">𝑞</span>
+                                        <span class="option-text">q0, q1, q2...</span>
+                                        <span class="option-check">✓</span>
+                                    </div>
 
-                                <option value="letters">
-                                    A, B, C, D...
-                                </option>
+                                    <div
+                                        class="dropdown-option"
+                                        data-value="letters"
+                                        role="option"
+                                        aria-selected="false"
+                                        tabindex="0"
+                                    >
+                                        <span class="option-icon">A</span>
+                                        <span class="option-text">A, B, C, D...</span>
+                                        <span class="option-check">✓</span>
+                                    </div>
 
-                                <option value="custom">
-                                    Custom
-                                </option>
+                                    <div
+                                        class="dropdown-option"
+                                        data-value="custom"
+                                        role="option"
+                                        aria-selected="false"
+                                        tabindex="0"
+                                    >
+                                        <span class="option-icon">✎</span>
+                                        <span class="option-text">Custom</span>
+                                        <span class="option-check">✓</span>
+                                    </div>
+                                </div>
 
-                            </select>
+                                <select id="stateNamingMode" class="visually-hidden-select" tabindex="-1" aria-hidden="true">
+                                    <option value="q">
+                                        q0, q1, q2...
+                                    </option>
+                                    <option value="letters">
+                                        A, B, C, D...
+                                    </option>
+                                    <option value="custom">
+                                        Custom
+                                    </option>
+                                </select>
+                            </div>
 
 
                             <input
@@ -641,6 +696,11 @@
                         <span>
                             <kbd>SHIFT + CLICK SAME STATE</kbd>
                             Self-loop
+                        </span>
+
+                        <span>
+                            <kbd>ALT + CLICK</kbd> / <kbd>DEL</kbd>
+                            Delete state
                         </span>
 
                     </div>
@@ -790,6 +850,18 @@
                             <div>
                                 <strong>Move State</strong>
                                 <small>Drag a state</small>
+                            </div>
+                        </button>
+
+
+                        <button
+                            class="designer-button danger-control"
+                            data-tool="delete"
+                        >
+                            <span>🗑</span>
+                            <div>
+                                <strong>Delete State</strong>
+                                <small>Click a state to remove</small>
                             </div>
                         </button>
 
