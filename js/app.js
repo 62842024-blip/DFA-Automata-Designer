@@ -148,17 +148,30 @@ let stateNumber = 0;
 
 let selectedState = null;
 
+let selectedTransition = null;
+
+let hoveredTransition = null;
+
 let transitionStart = null;
 
 let currentTool = "create";
 
 let isDragging = false;
 
+let isDraggingTransition = false;
+
+let draggedTransition = null;
+
+let wasDragging = false;
+
+let justDragged = false;
+
 let dragOffsetX = 0;
 
 let dragOffsetY = 0;
 
 let mouseDownTime = 0;
+
 
 
 /* =========================================================
@@ -256,6 +269,8 @@ function restoreSnapshot(snapshot) {
     customStateName.disabled =
         namingMode !== "custom";
 
+    selectedTransition = null;
+    hoveredTransition = null;
 
     updateAll();
 
@@ -1061,6 +1076,197 @@ function getStateAt(x, y) {
 
 
 /* =========================================================
+   GEOMETRY & TRANSITION UTILITIES
+========================================================= */
+
+function pointToSegmentDistance(px, py, ax, ay, bx, by) {
+    const dx = bx - ax;
+    const dy = by - ay;
+    const l2 = dx * dx + dy * dy;
+    if (l2 === 0) {
+        return Math.hypot(px - ax, py - ay);
+    }
+    let t = ((px - ax) * dx + (py - ay) * dy) / l2;
+    t = Math.max(0, Math.min(1, t));
+    const projX = ax + t * dx;
+    const projY = ay + t * dy;
+    return Math.hypot(px - projX, py - projY);
+}
+
+function isPointNearTransitionLabel(x, y, transition) {
+    if (!transition || !transition._render) {
+        return false;
+    }
+    const lx = transition._render.labelX;
+    const ly = transition._render.labelY;
+    if (lx === undefined || ly === undefined) {
+        return false;
+    }
+    const labelWidth = Math.max(26, (transition.symbol ? transition.symbol.length : 1) * 10 + 16);
+    const labelHeight = 24;
+    return (
+        Math.abs(x - lx) <= labelWidth / 2 + 6 &&
+        Math.abs(y - ly) <= labelHeight / 2 + 6
+    );
+}
+
+function getTransitionCurvature(transition) {
+    if (typeof transition.curvature === "number") {
+        return transition.curvature;
+    }
+
+    const fromId = transition.from;
+    const toId = transition.to;
+
+    if (fromId === toId) {
+        const selfList = transitions.filter(
+            t => t.from === fromId && t.to === toId
+        );
+        const idx = selfList.findIndex(t => t.id === transition.id);
+        return 92 + Math.max(0, idx) * 36;
+    }
+
+    const fwdList = transitions.filter(
+        t => t.from === fromId && t.to === toId
+    );
+    const revList = transitions.filter(
+        t => t.from === toId && t.to === fromId
+    );
+    const fwdIndex = fwdList.findIndex(t => t.id === transition.id);
+    const hasReverse = revList.length > 0;
+
+    if (hasReverse) {
+        // Curve to the right of direction of travel so opposite transitions bow away from each other
+        return 38 + Math.max(0, fwdIndex) * 28;
+    }
+
+    if (fwdList.length <= 1) {
+        return 0; // Single direction with 1 transition is straight
+    }
+
+    // Multiple transitions in the same direction: stagger them symmetrically
+    const count = fwdList.length;
+    const step = 32;
+    return (fwdIndex - (count - 1) / 2) * step;
+}
+
+function adjustTransitionCurve(transition, mouseX, mouseY) {
+    const from = states.find(s => s.id === transition.from);
+    const to = states.find(s => s.id === transition.to);
+    if (!from || !to) {
+        return;
+    }
+
+    if (from.id === to.id) {
+        const dy = from.y - mouseY;
+        transition.curvature = Math.round(Math.max(45, Math.min(260, dy)));
+        return;
+    }
+
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 1) {
+        return;
+    }
+
+    const ux = dx / dist;
+    const uy = dy / dist;
+    const nx = -uy;
+    const ny = ux;
+
+    const midX = (from.x + to.x) / 2;
+    const midY = (from.y + to.y) / 2;
+
+    const delta = (mouseX - midX) * nx + (mouseY - midY) * ny;
+    // For quadratic bezier, apex offset is h / 2, so h = delta * 2
+    let h = delta * 2;
+    h = Math.max(-280, Math.min(280, h));
+    transition.curvature = Math.round(h);
+}
+
+function getTransitionAt(x, y) {
+    // 1. Check labels first (easier to target precisely)
+    for (let i = transitions.length - 1; i >= 0; i--) {
+        const t = transitions[i];
+        if (isPointNearTransitionLabel(x, y, t)) {
+            return t;
+        }
+    }
+
+    // 2. Check transition paths / curves
+    for (let i = transitions.length - 1; i >= 0; i--) {
+        const t = transitions[i];
+        const r = t._render;
+        if (!r) {
+            continue;
+        }
+
+        if (r.isSelfLoop) {
+            let prevX = r.startX;
+            let prevY = r.startY;
+            let hit = false;
+            const steps = 16;
+            for (let s = 1; s <= steps; s++) {
+                const u = s / steps;
+                const cu = 1 - u;
+                const px =
+                    cu * cu * cu * r.startX +
+                    3 * cu * cu * u * r.cp1x +
+                    3 * cu * u * u * r.cp2x +
+                    u * u * u * r.endX;
+                const py =
+                    cu * cu * cu * r.startY +
+                    3 * cu * cu * u * r.cp1y +
+                    3 * cu * u * u * r.cp2y +
+                    u * u * u * r.endY;
+
+                if (pointToSegmentDistance(x, y, prevX, prevY, px, py) <= 9) {
+                    hit = true;
+                    break;
+                }
+                prevX = px;
+                prevY = py;
+            }
+            if (hit) {
+                return t;
+            }
+        } else {
+            if (Math.abs(r.h || 0) < 1) {
+                if (pointToSegmentDistance(x, y, r.startX, r.startY, r.endX, r.endY) <= 9) {
+                    return t;
+                }
+            } else {
+                let prevX = r.startX;
+                let prevY = r.startY;
+                let hit = false;
+                const steps = 16;
+                for (let s = 1; s <= steps; s++) {
+                    const u = s / steps;
+                    const cu = 1 - u;
+                    const px = cu * cu * r.startX + 2 * cu * u * r.cpx + u * u * r.endX;
+                    const py = cu * cu * r.startY + 2 * cu * u * r.cpy + u * u * r.endY;
+
+                    if (pointToSegmentDistance(x, y, prevX, prevY, px, py) <= 9) {
+                        hit = true;
+                        break;
+                    }
+                    prevX = px;
+                    prevY = py;
+                }
+                if (hit) {
+                    return t;
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+
+
+/* =========================================================
    CREATE STATE
 ========================================================= */
 
@@ -1361,6 +1567,16 @@ function deleteState(state) {
 
 
     if (
+        selectedTransition &&
+        (selectedTransition.from === state.id ||
+         selectedTransition.to === state.id)
+    ) {
+        selectedTransition =
+            null;
+    }
+
+
+    if (
         transitionStart &&
         transitionStart.id === state.id
     ) {
@@ -1379,24 +1595,91 @@ function deleteState(state) {
 }
 
 
-function deleteSelectedState() {
+/* =========================================================
+   DELETE TRANSITION ACTION
+========================================================= */
 
-    if (
-        !selectedState
-    ) {
+function deleteTransition(transition) {
 
-        alert(
-            "Select a state first."
-        );
-
+    if (!transition) {
         return;
-
     }
 
 
-    deleteState(
-        selectedState
+    const fromState =
+        states.find(
+            s => s.id === transition.from
+        );
+
+    const toState =
+        states.find(
+            s => s.id === transition.to
+        );
+
+    const fromName =
+        fromState ? fromState.name : "?";
+
+    const toName =
+        toState ? toState.name : "?";
+
+
+    saveHistory(
+        `Deleted transition ${fromName} → ${toName} (${transition.symbol})`
     );
+
+
+    transitions =
+        transitions.filter(
+            t => t.id !== transition.id
+        );
+
+
+    if (
+        selectedTransition &&
+        selectedTransition.id === transition.id
+    ) {
+        selectedTransition = null;
+    }
+
+    if (
+        hoveredTransition &&
+        hoveredTransition.id === transition.id
+    ) {
+        hoveredTransition = null;
+    }
+
+
+    addActivity(
+        `Deleted transition ${fromName} --${transition.symbol}--> ${toName}`
+    );
+
+
+    updateAll();
+
+}
+
+
+function deleteSelectedState() {
+
+    if (selectedState) {
+
+        deleteState(
+            selectedState
+        );
+
+    } else if (selectedTransition) {
+
+        deleteTransition(
+            selectedTransition
+        );
+
+    } else {
+
+        alert(
+            "Select a state or transition first."
+        );
+
+    }
 
 }
 
@@ -1438,6 +1721,9 @@ document.addEventListener(
             if (selectedState) {
                 event.preventDefault();
                 deleteState(selectedState);
+            } else if (selectedTransition) {
+                event.preventDefault();
+                deleteTransition(selectedTransition);
             }
 
         }
@@ -1454,11 +1740,15 @@ canvas.addEventListener(
     "click",
     function (event) {
 
+        if (justDragged) {
+            justDragged = false;
+            return;
+        }
+
         const position =
             getMousePosition(
                 event
             );
-
 
         const state =
             getStateAt(
@@ -1466,15 +1756,36 @@ canvas.addEventListener(
                 position.y
             );
 
-
-        if (
-            event.altKey &&
-            state
-        ) {
-
-            deleteState(
-                state
+        const transition =
+            getTransitionAt(
+                position.x,
+                position.y
             );
+
+
+        /* -----------------------------------------------
+           ALT + CLICK: DELETE STATE OR TRANSITION
+        ------------------------------------------------ */
+
+        if (event.altKey) {
+
+            if (
+                transition &&
+                (!state || isPointNearTransitionLabel(position.x, position.y, transition))
+            ) {
+                deleteTransition(transition);
+                return;
+            }
+
+            if (state) {
+                deleteState(state);
+                return;
+            }
+
+            if (transition) {
+                deleteTransition(transition);
+                return;
+            }
 
             return;
 
@@ -1490,12 +1801,22 @@ canvas.addEventListener(
             "delete"
         ) {
 
+            if (
+                transition &&
+                (!state || isPointNearTransitionLabel(position.x, position.y, transition))
+            ) {
+                deleteTransition(transition);
+                return;
+            }
+
             if (state) {
+                deleteState(state);
+                return;
+            }
 
-                deleteState(
-                    state
-                );
-
+            if (transition) {
+                deleteTransition(transition);
+                return;
             }
 
             return;
@@ -1533,6 +1854,9 @@ canvas.addEventListener(
 
                 selectedState =
                     state;
+
+                selectedTransition =
+                    null;
 
                 updateToolStatus();
 
@@ -1620,6 +1944,29 @@ canvas.addEventListener(
                 selectedState =
                     state;
 
+                selectedTransition =
+                    null;
+
+                draw();
+
+            } else if (transition) {
+
+                selectedTransition =
+                    transition;
+
+                selectedState =
+                    null;
+
+                draw();
+
+            } else {
+
+                selectedState =
+                    null;
+
+                selectedTransition =
+                    null;
+
                 draw();
 
             }
@@ -1633,19 +1980,38 @@ canvas.addEventListener(
            DEFAULT CREATE MODE
         ------------------------------------------------ */
 
-        if (!state) {
+        if (state) {
+
+            selectedState =
+                state;
+
+            selectedTransition =
+                null;
+
+            draw();
+
+        } else if (transition) {
+
+            selectedTransition =
+                transition;
+
+            selectedState =
+                null;
+
+            draw();
+
+        } else {
+
+            selectedState =
+                null;
+
+            selectedTransition =
+                null;
 
             createState(
                 position.x,
                 position.y
             );
-
-        } else {
-
-            selectedState =
-                state;
-
-            draw();
 
         }
 
@@ -1654,7 +2020,7 @@ canvas.addEventListener(
 
 
 /* =========================================================
-   DOUBLE CLICK = FINAL STATE
+   DOUBLE CLICK = FINAL STATE / RESET CURVE
 ========================================================= */
 
 canvas.addEventListener(
@@ -1682,6 +2048,32 @@ canvas.addEventListener(
             toggleFinalState(
                 state
             );
+
+            return;
+
+        }
+
+
+        const transition =
+            getTransitionAt(
+                position.x,
+                position.y
+            );
+
+
+        if (transition && typeof transition.curvature === "number") {
+
+            delete transition.curvature;
+
+            saveHistory(
+                "Reset transition curve"
+            );
+
+            addActivity(
+                `Reset curve for transition (${transition.symbol})`
+            );
+
+            draw();
 
         }
 
@@ -1801,7 +2193,7 @@ canvas.addEventListener(
 
 
 /* =========================================================
-   MOUSE DOWN FOR DRAG
+   MOUSE DOWN FOR DRAG (STATE OR TRANSITION CURVE)
 ========================================================= */
 
 canvas.addEventListener(
@@ -1810,7 +2202,8 @@ canvas.addEventListener(
 
         if (
             event.button !== 0 ||
-            event.shiftKey
+            event.shiftKey ||
+            event.altKey
         ) {
 
             return;
@@ -1831,11 +2224,11 @@ canvas.addEventListener(
             );
 
 
-        if (!state) {
-
-            return;
-
-        }
+        const transition =
+            getTransitionAt(
+                position.x,
+                position.y
+            );
 
 
         if (
@@ -1851,25 +2244,84 @@ canvas.addEventListener(
         }
 
 
-        selectedState =
-            state;
+        if (
+            transition &&
+            isPointNearTransitionLabel(position.x, position.y, transition)
+        ) {
+
+            selectedTransition =
+                transition;
+
+            selectedState =
+                null;
+
+            isDraggingTransition =
+                true;
+
+            draggedTransition =
+                transition;
+
+            wasDragging =
+                false;
+
+            draw();
+
+            return;
+
+        }
 
 
-        isDragging =
-            true;
+        if (state) {
+
+            selectedState =
+                state;
+
+            selectedTransition =
+                null;
+
+            isDragging =
+                true;
+
+            wasDragging =
+                false;
+
+            dragOffsetX =
+                position.x -
+                state.x;
+
+            dragOffsetY =
+                position.y -
+                state.y;
+
+            draw();
+
+            return;
+
+        }
 
 
-        dragOffsetX =
-            position.x -
-            state.x;
+        if (transition) {
 
+            selectedTransition =
+                transition;
 
-        dragOffsetY =
-            position.y -
-            state.y;
+            selectedState =
+                null;
 
+            isDraggingTransition =
+                true;
 
-        draw();
+            draggedTransition =
+                transition;
+
+            wasDragging =
+                false;
+
+            draw();
+
+            return;
+
+        }
 
     }
 );
@@ -1883,38 +2335,123 @@ canvas.addEventListener(
     "mousemove",
     function (event) {
 
-        if (
-            !isDragging ||
-            !selectedState
-        ) {
-
-            return;
-
-        }
-
-
         const position =
             getMousePosition(
                 event
             );
 
 
-        selectedState.x =
-            position.x -
-            dragOffsetX;
-
-
-        selectedState.y =
-            position.y -
-            dragOffsetY;
-
-
-        clampStateToCanvas(
+        if (
+            isDragging &&
             selectedState
-        );
+        ) {
+
+            wasDragging =
+                true;
+
+            selectedState.x =
+                position.x -
+                dragOffsetX;
+
+            selectedState.y =
+                position.y -
+                dragOffsetY;
+
+            clampStateToCanvas(
+                selectedState
+            );
+
+            draw();
+
+            return;
+
+        }
 
 
-        draw();
+        if (
+            isDraggingTransition &&
+            draggedTransition
+        ) {
+
+            wasDragging =
+                true;
+
+            adjustTransitionCurve(
+                draggedTransition,
+                position.x,
+                position.y
+            );
+
+            draw();
+
+            return;
+
+        }
+
+
+        /* Hover detection & cursor styling */
+
+        const stateUnderMouse =
+            getStateAt(
+                position.x,
+                position.y
+            );
+
+        const transitionUnderMouse =
+            getTransitionAt(
+                position.x,
+                position.y
+            );
+
+
+        if (
+            transitionUnderMouse !==
+            hoveredTransition
+        ) {
+
+            hoveredTransition =
+                transitionUnderMouse;
+
+            draw();
+
+        }
+
+
+        if (
+            event.altKey ||
+            currentTool === "delete"
+        ) {
+
+            if (stateUnderMouse || transitionUnderMouse) {
+
+                canvas.style.cursor =
+                    "pointer";
+
+            } else {
+
+                canvas.style.cursor =
+                    "default";
+
+            }
+
+        } else if (stateUnderMouse) {
+
+            canvas.style.cursor =
+                "move";
+
+        } else if (transitionUnderMouse) {
+
+            canvas.style.cursor =
+                "grab";
+
+        } else {
+
+            canvas.style.cursor =
+                currentTool === "create"
+                    ? "crosshair"
+                    : "default";
+
+        }
 
     }
 );
@@ -1929,6 +2466,67 @@ canvas.addEventListener(
     function () {
 
         if (
+            isDraggingTransition &&
+            draggedTransition
+        ) {
+
+            const t =
+                draggedTransition;
+
+            isDraggingTransition =
+                false;
+
+            draggedTransition =
+                null;
+
+
+            if (wasDragging) {
+
+                justDragged =
+                    true;
+
+                setTimeout(
+                    () => {
+                        justDragged =
+                            false;
+                    },
+                    70
+                );
+
+                const fromState =
+                    states.find(
+                        s => s.id === t.from
+                    );
+
+                const toState =
+                    states.find(
+                        s => s.id === t.to
+                    );
+
+                const fromName =
+                    fromState ? fromState.name : "?";
+
+                const toName =
+                    toState ? toState.name : "?";
+
+                saveHistory(
+                    `Adjusted transition curve ${fromName} → ${toName} (${t.symbol})`
+                );
+
+                addActivity(
+                    `Adjusted curve for transition ${fromName} --${t.symbol}--> ${toName}`
+                );
+
+                updateAll();
+
+            }
+
+            return;
+
+        }
+
+
+        if (
             !isDragging
         ) {
 
@@ -1941,17 +2539,30 @@ canvas.addEventListener(
             false;
 
 
-        saveHistory(
-            `Moved state ${selectedState ? selectedState.name : ""}`
-        );
+        if (wasDragging) {
 
+            justDragged =
+                true;
 
-        addActivity(
-            `Moved state ${selectedState ? selectedState.name : ""}`
-        );
+            setTimeout(
+                () => {
+                    justDragged =
+                        false;
+                },
+                70
+            );
 
+            saveHistory(
+                `Moved state ${selectedState ? selectedState.name : ""}`
+            );
 
-        updateAll();
+            addActivity(
+                `Moved state ${selectedState ? selectedState.name : ""}`
+            );
+
+            updateAll();
+
+        }
 
     }
 );
@@ -1968,14 +2579,27 @@ canvas.addEventListener(
         isDragging =
             false;
 
+        isDraggingTransition =
+            false;
+
+        draggedTransition =
+            null;
+
+        if (hoveredTransition) {
+
+            hoveredTransition =
+                null;
+
+            draw();
+
+        }
+
     }
 );
 
 
 /* =========================================================
-   DOCUMENT MOUSE UP – failsafe to clear isDragging when
-   the mouse button is released anywhere outside the canvas
-   so drag state never gets permanently stuck.
+   DOCUMENT MOUSE UP – failsafe
 ========================================================= */
 
 document.addEventListener(
@@ -1988,6 +2612,18 @@ document.addEventListener(
 
             isDragging =
                 false;
+
+        }
+
+        if (
+            isDraggingTransition
+        ) {
+
+            isDraggingTransition =
+                false;
+
+            draggedTransition =
+                null;
 
         }
 
@@ -2121,10 +2757,10 @@ function updateToolStatus() {
                 : "Create Transition — click source then target",
 
         move:
-            "Move State — drag a state",
+            "Move — drag a state or transition curve",
 
         delete:
-            "Delete State — click a state to remove"
+            "Delete — click a state or transition to remove"
 
     };
 
@@ -2222,63 +2858,71 @@ function draw() {
 
 function drawTransitions() {
 
+    const normalList = [];
+    const activeList = [];
+
     transitions.forEach(
         transition => {
-
-            const from =
-                states.find(
-                    state =>
-                        state.id ===
-                        transition.from
-                );
-
-
-            const to =
-                states.find(
-                    state =>
-                        state.id ===
-                        transition.to
-                );
-
-
             if (
-                !from ||
-                !to
+                (selectedTransition && selectedTransition.id === transition.id) ||
+                (hoveredTransition && hoveredTransition.id === transition.id)
             ) {
-
-                return;
-
-            }
-
-
-            if (
-                from.id ===
-                to.id
-            ) {
-
-                drawSelfLoop(
-                    from,
-                    transition
-                );
-
+                activeList.push(transition);
             } else {
-
-                drawNormalTransition(
-                    from,
-                    to,
-                    transition
-                );
-
+                normalList.push(transition);
             }
-
         }
     );
+
+    function renderSingleTransition(transition) {
+
+        const from =
+            states.find(
+                state =>
+                    state.id ===
+                    transition.from
+            );
+
+        const to =
+            states.find(
+                state =>
+                    state.id ===
+                    transition.to
+            );
+
+        if (
+            !from ||
+            !to
+        ) {
+            return;
+        }
+
+        if (
+            from.id ===
+            to.id
+        ) {
+            drawSelfLoop(
+                from,
+                transition
+            );
+        } else {
+            drawNormalTransition(
+                from,
+                to,
+                transition
+            );
+        }
+
+    }
+
+    normalList.forEach(renderSingleTransition);
+    activeList.forEach(renderSingleTransition);
 
 }
 
 
 /* =========================================================
-   DRAW NORMAL TRANSITION
+   DRAW NORMAL TRANSITION (WITH AUTO-CURVE & MANUAL DRAG)
 ========================================================= */
 
 function drawNormalTransition(
@@ -2295,22 +2939,17 @@ function drawNormalTransition(
         to.y -
         from.y;
 
-
     const distance =
-        Math.sqrt(
-            dx * dx +
-            dy * dy
+        Math.hypot(
+            dx,
+            dy
         );
-
 
     if (
         distance < 1
     ) {
-
         return;
-
     }
-
 
     const ux =
         dx / distance;
@@ -2318,33 +2957,138 @@ function drawNormalTransition(
     const uy =
         dy / distance;
 
+    const nx =
+        -uy;
 
-    const startX =
-        from.x +
-        ux *
-            STATE_RADIUS;
+    const ny =
+        ux;
 
+    const midX =
+        (from.x + to.x) / 2;
 
-    const startY =
-        from.y +
-        uy *
-            STATE_RADIUS;
+    const midY =
+        (from.y + to.y) / 2;
 
+    const h =
+        getTransitionCurvature(
+            transition
+        );
 
-    const endX =
-        to.x -
-        ux *
-            (STATE_RADIUS + 4);
+    const cpx =
+        midX + nx * h;
 
+    const cpy =
+        midY + ny * h;
 
-    const endY =
-        to.y -
-        uy *
-            (STATE_RADIUS + 4);
+    let startX;
+    let startY;
+    let endX;
+    let endY;
+    let arrowAngle;
+    let labelX;
+    let labelY;
 
+    if (Math.abs(h) < 1) {
+
+        startX =
+            from.x +
+            ux * STATE_RADIUS;
+
+        startY =
+            from.y +
+            uy * STATE_RADIUS;
+
+        endX =
+            to.x -
+            ux * (STATE_RADIUS + 4);
+
+        endY =
+            to.y -
+            uy * (STATE_RADIUS + 4);
+
+        arrowAngle =
+            Math.atan2(
+                endY - startY,
+                endX - startX
+            );
+
+        labelX =
+            (startX + endX) / 2;
+
+        labelY =
+            (startY + endY) / 2;
+
+    } else {
+
+        const startAngle =
+            Math.atan2(
+                cpy - from.y,
+                cpx - from.x
+            );
+
+        startX =
+            from.x +
+            Math.cos(startAngle) * STATE_RADIUS;
+
+        startY =
+            from.y +
+            Math.sin(startAngle) * STATE_RADIUS;
+
+        const endAngle =
+            Math.atan2(
+                cpy - to.y,
+                cpx - to.x
+            );
+
+        endX =
+            to.x +
+            Math.cos(endAngle) * (STATE_RADIUS + 4);
+
+        endY =
+            to.y +
+            Math.sin(endAngle) * (STATE_RADIUS + 4);
+
+        arrowAngle =
+            Math.atan2(
+                endY - cpy,
+                endX - cpx
+            );
+
+        labelX =
+            0.25 * startX +
+            0.5 * cpx +
+            0.25 * endX;
+
+        labelY =
+            0.25 * startY +
+            0.5 * cpy +
+            0.25 * endY;
+
+    }
+
+    transition._render = {
+        isSelfLoop: false,
+        startX,
+        startY,
+        cpx,
+        cpy,
+        endX,
+        endY,
+        labelX,
+        labelY,
+        h,
+        arrowAngle
+    };
+
+    const isSelected =
+        selectedTransition &&
+        selectedTransition.id === transition.id;
+
+    const isHovered =
+        hoveredTransition &&
+        hoveredTransition.id === transition.id;
 
     ctx.save();
-
 
     ctx.beginPath();
 
@@ -2353,26 +3097,50 @@ function drawNormalTransition(
         startY
     );
 
-    ctx.lineTo(
-        endX,
-        endY
-    );
+    if (Math.abs(h) < 1) {
+        ctx.lineTo(
+            endX,
+            endY
+        );
+    } else {
+        ctx.quadraticCurveTo(
+            cpx,
+            cpy,
+            endX,
+            endY
+        );
+    }
 
-
-    ctx.strokeStyle =
-        "#b875ff";
-
-    ctx.lineWidth =
-        2.2;
-
-    ctx.shadowColor =
-        "rgba(184,117,255,0.45)";
-
-    ctx.shadowBlur =
-        7;
+    if (isSelected) {
+        ctx.strokeStyle =
+            "#ff70cb";
+        ctx.lineWidth =
+            3.2;
+        ctx.shadowColor =
+            "rgba(255,112,203,0.75)";
+        ctx.shadowBlur =
+            12;
+    } else if (isHovered) {
+        ctx.strokeStyle =
+            "#d896ff";
+        ctx.lineWidth =
+            2.6;
+        ctx.shadowColor =
+            "rgba(216,150,255,0.6)";
+        ctx.shadowBlur =
+            9;
+    } else {
+        ctx.strokeStyle =
+            "#b875ff";
+        ctx.lineWidth =
+            2.2;
+        ctx.shadowColor =
+            "rgba(184,117,255,0.45)";
+        ctx.shadowBlur =
+            7;
+    }
 
     ctx.stroke();
-
 
     ctx.shadowBlur =
         0;
@@ -2380,12 +3148,245 @@ function drawNormalTransition(
 
     /* ARROWHEAD */
 
-    const angle =
-        Math.atan2(
-            endY - startY,
-            endX - startX
+    ctx.beginPath();
+
+    ctx.moveTo(
+        endX,
+        endY
+    );
+
+    ctx.lineTo(
+        endX -
+            ARROW_SIZE *
+                Math.cos(
+                    arrowAngle -
+                    Math.PI / 6
+                ),
+        endY -
+            ARROW_SIZE *
+                Math.sin(
+                    arrowAngle -
+                    Math.PI / 6
+                )
+    );
+
+    ctx.lineTo(
+        endX -
+            ARROW_SIZE *
+                Math.cos(
+                    arrowAngle +
+                    Math.PI / 6
+                ),
+        endY -
+            ARROW_SIZE *
+                Math.sin(
+                    arrowAngle +
+                    Math.PI / 6
+                )
+    );
+
+    ctx.closePath();
+
+    ctx.fillStyle =
+        isSelected
+            ? "#ffffff"
+            : "#e48cff";
+
+    ctx.fill();
+
+
+    /* DRAG / CURVE CONTROL HALO INDICATOR */
+
+    if (isSelected || isHovered) {
+        ctx.beginPath();
+        ctx.arc(
+            labelX,
+            labelY,
+            16,
+            0,
+            Math.PI * 2
+        );
+        ctx.fillStyle =
+            isSelected
+                ? "rgba(255,112,203,0.18)"
+                : "rgba(184,117,255,0.14)";
+        ctx.fill();
+        ctx.strokeStyle =
+            isSelected
+                ? "rgba(255,112,203,0.85)"
+                : "rgba(216,150,255,0.5)";
+        ctx.lineWidth =
+            1;
+        ctx.stroke();
+    }
+
+
+    /* LABEL */
+
+    drawTransitionLabel(
+        transition.symbol,
+        labelX,
+        labelY,
+        isSelected,
+        isHovered
+    );
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   DRAW SELF LOOP (WITH MULTI-LOOP SPREAD & MANUAL DRAG)
+========================================================= */
+
+function drawSelfLoop(
+    state,
+    transition
+) {
+
+    const loopTop =
+        state.y -
+        STATE_RADIUS;
+
+    const selfTransitions =
+        transitions.filter(
+            t => t.from === state.id && t.to === state.id
         );
 
+    const selfIndex =
+        selfTransitions.findIndex(
+            t => t.id === transition.id
+        );
+
+    let cpHeight;
+    let cpOffset;
+
+    if (typeof transition.curvature === "number") {
+        cpHeight =
+            transition.curvature;
+        cpOffset =
+            Math.max(50, cpHeight * 0.78);
+    } else {
+        cpHeight =
+            92 + Math.max(0, selfIndex) * 36;
+        cpOffset =
+            72 + Math.max(0, selfIndex) * 24;
+    }
+
+    const startX =
+        state.x - 22;
+
+    const startY =
+        loopTop;
+
+    const endX =
+        state.x + 22;
+
+    const endY =
+        loopTop;
+
+    const cp1x =
+        state.x - cpOffset;
+
+    const cp1y =
+        state.y - cpHeight;
+
+    const cp2x =
+        state.x + cpOffset;
+
+    const cp2y =
+        state.y - cpHeight;
+
+    const labelX =
+        state.x;
+
+    const labelY =
+        state.y - cpHeight + 10;
+
+    transition._render = {
+        isSelfLoop: true,
+        startX,
+        startY,
+        endX,
+        endY,
+        cp1x,
+        cp1y,
+        cp2x,
+        cp2y,
+        labelX,
+        labelY,
+        cpHeight
+    };
+
+    const isSelected =
+        selectedTransition &&
+        selectedTransition.id === transition.id;
+
+    const isHovered =
+        hoveredTransition &&
+        hoveredTransition.id === transition.id;
+
+    ctx.save();
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        startX,
+        startY
+    );
+
+    ctx.bezierCurveTo(
+        cp1x,
+        cp1y,
+        cp2x,
+        cp2y,
+        endX,
+        endY
+    );
+
+    if (isSelected) {
+        ctx.strokeStyle =
+            "#ff70cb";
+        ctx.lineWidth =
+            3.2;
+        ctx.shadowColor =
+            "rgba(255,112,203,0.75)";
+        ctx.shadowBlur =
+            12;
+    } else if (isHovered) {
+        ctx.strokeStyle =
+            "#ff9bd7";
+        ctx.lineWidth =
+            2.6;
+        ctx.shadowColor =
+            "rgba(255,155,215,0.6)";
+        ctx.shadowBlur =
+            9;
+    } else {
+        ctx.strokeStyle =
+            "#ff6bc5";
+        ctx.lineWidth =
+            2.2;
+        ctx.shadowColor =
+            "rgba(255,107,197,0.45)";
+        ctx.shadowBlur =
+            8;
+    }
+
+    ctx.stroke();
+
+    ctx.shadowBlur =
+        0;
+
+
+    /* ARROWHEAD AT RIGHT SIDE OF LOOP */
+
+    const arrowAngle =
+        Math.atan2(
+            endY - cp2y,
+            endX - cp2x
+        );
 
     ctx.beginPath();
 
@@ -2398,14 +3399,13 @@ function drawNormalTransition(
         endX -
             ARROW_SIZE *
                 Math.cos(
-                    angle -
+                    arrowAngle -
                     Math.PI / 6
                 ),
-
         endY -
             ARROW_SIZE *
                 Math.sin(
-                    angle -
+                    arrowAngle -
                     Math.PI / 6
                 )
     );
@@ -2414,176 +3414,62 @@ function drawNormalTransition(
         endX -
             ARROW_SIZE *
                 Math.cos(
-                    angle +
+                    arrowAngle +
                     Math.PI / 6
                 ),
-
         endY -
             ARROW_SIZE *
                 Math.sin(
-                    angle +
+                    arrowAngle +
                     Math.PI / 6
                 )
     );
 
     ctx.closePath();
 
-
     ctx.fillStyle =
-        "#e48cff";
+        isSelected
+            ? "#ffffff"
+            : "#ff9bd7";
 
     ctx.fill();
+
+
+    /* DRAG / CURVE CONTROL HALO INDICATOR */
+
+    if (isSelected || isHovered) {
+        ctx.beginPath();
+        ctx.arc(
+            labelX,
+            labelY,
+            16,
+            0,
+            Math.PI * 2
+        );
+        ctx.fillStyle =
+            isSelected
+                ? "rgba(255,112,203,0.18)"
+                : "rgba(255,107,197,0.14)";
+        ctx.fill();
+        ctx.strokeStyle =
+            isSelected
+                ? "rgba(255,112,203,0.85)"
+                : "rgba(255,155,215,0.5)";
+        ctx.lineWidth =
+            1;
+        ctx.stroke();
+    }
 
 
     /* LABEL */
 
-    const labelX =
-        (startX + endX) / 2;
-
-    const labelY =
-        (startY + endY) / 2;
-
-
     drawTransitionLabel(
         transition.symbol,
         labelX,
-        labelY
+        labelY,
+        isSelected,
+        isHovered
     );
-
-
-    ctx.restore();
-
-}
-
-
-/* =========================================================
-   DRAW SELF LOOP
-========================================================= */
-
-function drawSelfLoop(
-    state,
-    transition
-) {
-
-    const radius =
-        42;
-
-
-    const loopTop =
-        state.y -
-        STATE_RADIUS;
-
-
-    ctx.save();
-
-
-    ctx.beginPath();
-
-
-    /*
-     * The loop is deliberately above
-     * the state so it never hides
-     * the state circle.
-     */
-
-    ctx.moveTo(
-        state.x -
-            22,
-        loopTop
-    );
-
-
-    ctx.bezierCurveTo(
-
-        state.x -
-            72,
-
-        state.y -
-            92,
-
-        state.x +
-            72,
-
-        state.y -
-            92,
-
-        state.x +
-            22,
-
-        loopTop
-
-    );
-
-
-    ctx.strokeStyle =
-        "#ff6bc5";
-
-    ctx.lineWidth =
-        2.2;
-
-    ctx.shadowColor =
-        "rgba(255,107,197,0.45)";
-
-    ctx.shadowBlur =
-        8;
-
-    ctx.stroke();
-
-
-    ctx.shadowBlur =
-        0;
-
-
-    /*
-     * Arrowhead at the
-     * right side of loop.
-     */
-
-    const arrowX =
-        state.x +
-        22;
-
-    const arrowY =
-        loopTop;
-
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        arrowX,
-        arrowY
-    );
-
-    ctx.lineTo(
-        arrowX -
-            9,
-        arrowY -
-            5
-    );
-
-    ctx.lineTo(
-        arrowX -
-            8,
-        arrowY +
-            7
-    );
-
-    ctx.closePath();
-
-
-    ctx.fillStyle =
-        "#ff9bd7";
-
-    ctx.fill();
-
-
-    drawTransitionLabel(
-        transition.symbol,
-        state.x,
-        state.y -
-            82
-    );
-
 
     ctx.restore();
 
@@ -2597,30 +3483,36 @@ function drawSelfLoop(
 function drawTransitionLabel(
     symbol,
     x,
-    y
+    y,
+    isSelected = false,
+    isHovered = false
 ) {
 
     ctx.save();
 
-
     ctx.font =
         "700 12px Inter";
 
-
-    const width =
+    const textWidth =
         ctx.measureText(
             symbol
-        ).width +
-        14;
+        ).width;
 
+    const width =
+        Math.max(
+            24,
+            textWidth + 14
+        );
 
     const height =
         22;
 
-
     ctx.fillStyle =
-        "rgba(13,9,21,0.92)";
-
+        isSelected
+            ? "rgba(34,14,48,0.96)"
+            : isHovered
+                ? "rgba(25,12,36,0.95)"
+                : "rgba(13,9,21,0.92)";
 
     roundRect(
         ctx,
@@ -2633,22 +3525,38 @@ function drawTransitionLabel(
         7
     );
 
-
     ctx.fill();
 
-
-    ctx.strokeStyle =
-        "rgba(255,107,197,0.30)";
-
-    ctx.lineWidth =
-        1;
+    if (isSelected) {
+        ctx.strokeStyle =
+            "#ff70cb";
+        ctx.lineWidth =
+            1.8;
+        ctx.shadowColor =
+            "rgba(255,112,203,0.6)";
+        ctx.shadowBlur =
+            8;
+    } else if (isHovered) {
+        ctx.strokeStyle =
+            "rgba(255,107,197,0.75)";
+        ctx.lineWidth =
+            1.3;
+    } else {
+        ctx.strokeStyle =
+            "rgba(255,107,197,0.30)";
+        ctx.lineWidth =
+            1;
+    }
 
     ctx.stroke();
 
+    ctx.shadowBlur =
+        0;
 
     ctx.fillStyle =
-        "#ff9bd7";
-
+        isSelected
+            ? "#ffffff"
+            : "#ff9bd7";
 
     ctx.textAlign =
         "center";
@@ -2656,13 +3564,11 @@ function drawTransitionLabel(
     ctx.textBaseline =
         "middle";
 
-
     ctx.fillText(
         symbol,
         x,
         y
     );
-
 
     ctx.restore();
 
@@ -4077,6 +4983,10 @@ function clearAutomaton() {
     stateNumber = 0;
 
     selectedState = null;
+
+    selectedTransition = null;
+
+    hoveredTransition = null;
 
     transitionStart = null;
 
